@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Tiny Story Weaver</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Poppins:wght@600&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles to extend Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A; /* Slate 900 */
+            color: #CBD5E1; /* Slate 300 */
+        }
+        .font-serif-story {
+            font-family: 'Lora', serif;
+        }
+        .font-header {
+            font-family: 'Poppins', sans-serif;
+        }
+        .card-bg {
+            background-color: #1E293B; /* Slate 800 */
+            border: 1px solid #334155; /* Slate 700 */
+        }
+        .main-button {
+            transition: all 0.3s ease;
+            background: #2563EB; /* Blue 600 */
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+        }
+        .main-button:hover {
+            background: #1D4ED8; /* Blue 700 */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+        }
+        .main-button:active {
+            transform: translateY(0);
+        }
+        .example-prompt {
+            transition: all 0.2s ease;
+            color: #94A3B8; /* Slate 400 */
+            border: 1px solid #334155; /* Slate 700 */
+        }
+        .example-prompt:hover {
+            background-color: #334155; /* Slate 700 */
+            color: #F1F5F9; /* Slate 100 */
+            border-color: #475569; /* Slate 600 */
+        }
+        /* Custom slider styles */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #334155; /* Slate 700 */
+            border-radius: 9999px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3B82F6; /* Blue 500 */
+            cursor: pointer;
+            margin-top: -7px; /* Center thumb on track */
+            transition: background 0.2s ease;
+            border: 2px solid #1E293B; /* Slate 800 */
+        }
+        input[type=range]:hover::-webkit-slider-thumb {
+            background: #60A5FA; /* Blue 400 */
+        }
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 9999px;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3B82F6;
+            cursor: pointer;
+            border: 2px solid #1E293B;
+        }
+        input[type=range]:hover::-moz-range-thumb {
+            background: #60A5FA;
+        }
+
+        /* Message Box */
+        #message-box {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+        
+        /* Modal Styles */
+        #modal-backdrop {
+            transition: opacity 0.3s ease;
+        }
+        #modal-content {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        
+        /* Blinking cursor for streaming text */
+        .blinking-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1.2rem;
+            background-color: #60A5FA;
+            animation: blink 1s step-end infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            50% { background-color: transparent; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-6xl mx-auto space-y-8 py-12">
+        
+        <!-- Header -->
+        <header class="text-center">
+            <h1 class="font-header text-4xl md:text-5xl font-bold text-blue-400">The Tiny Story Weaver</h1>
+            <p class="text-slate-400 mt-2">
+                An experimental 30M parameter language model
+                <button id="info-btn" class="ml-1 inline-block text-blue-400 hover:text-blue-300 transition" title="About this model">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </p>
+        </header>
+
+        <!-- UI -->
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Input Card: "The Spark" -->
+            <div id="input-card" class="card-bg p-6 md:p-8 rounded-2xl shadow-2xl transition-opacity duration-300">
+                <div class="space-y-6 flex flex-col h-full">
+                    <div class="flex-grow space-y-6">
+                        <div>
+                            <label for="prompt" class="text-lg font-semibold text-slate-100">Prompt</label>
+                            <p class="text-sm text-slate-400 mb-3">Provide a starting context for the model.</p>
+                            <textarea id="prompt" rows="8" class="w-full p-3 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-slate-100 placeholder-slate-500" placeholder="A friendly dragon who loves to bake cakes..."></textarea>
+                        </div>
+
+                        <div>
+                            <p class="text-sm text-slate-400 mb-3">Or try an example:</p>
+                            <div class="flex flex-wrap gap-2">
+                                <button class="example-prompt bg-slate-800 text-sm py-1 px-3 rounded-full" data-prompt="A curious fox finds a magical map">A curious fox</button>
+                                <button class="example-prompt bg-slate-800 text-sm py-1 px-3 rounded-full" data-prompt="A little robot who wants to plant a garden">The robot gardener</button>
+                                <button class="example-prompt bg-slate-800 text-sm py-1 px-3 rounded-full" data-prompt="The shy squirrel who made a new friend">The shy squirrel</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="story-length" class="text-lg font-semibold text-slate-100">Story Length</label>
+                            <div class="flex items-center space-x-4 mt-2">
+                                <span class="text-sm text-slate-400">Short</span>
+                                <input id="story-length" type="range" min="1" max="3" value="2" class="w-full">
+                                <span class="text-sm text-slate-400">Long</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="generate-btn" class="main-button w-full text-white font-bold py-3 px-4 rounded-lg mt-auto">
+                        <span id="btn-text">Generate Story ✨</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Output Card: "The Tale" -->
+            <div class="card-bg p-6 md:p-8 rounded-2xl shadow-2xl">
+                <div id="output-container" class="relative min-h-[500px] flex flex-col items-start justify-start transition-all duration-300">
+                    
+                    <!-- Pristine/Initial State -->
+                    <div id="pristine-state" class="text-center text-slate-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                         <svg class="w-16 h-16 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+                         </svg>
+                        <p class="font-medium">Generated text will appear here.</p>
+                    </div>
+
+                    <!-- Result State (handles streaming) -->
+                    <div id="result-state" class="hidden w-full h-full">
+                        <div id="story-output" class="font-serif-story text-slate-200 text-lg leading-relaxed prose max-w-full h-[calc(100%-4rem)] overflow-y-auto pr-2"></div>
+                        <div id="result-actions" class="flex items-center justify-end space-x-2 mt-6 h-10 opacity-0 transition-opacity duration-500">
+                             <button id="copy-btn" title="Copy story" class="text-slate-400 hover:text-blue-400 p-2 rounded-full transition">
+                                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>
+                            </button>
+                             <button id="reset-btn" title="Start a new story" class="text-slate-400 hover:text-blue-400 p-2 rounded-full transition">
+                                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0M2.985 19.644A8.25 8.25 0 0114.648 8.02l-3.182 3.182m0 0l-3.182-3.182m3.182 3.182L8.465 4.862" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Error State -->
+                    <div id="error-state" class="hidden text-center text-red-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                         <svg class="w-12 h-12 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                        <p class="font-medium">Oops! Something went wrong.</p>
+                        <p id="error-message" class="text-sm mt-1"></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Message Box for notifications -->
+    <div id="message-box" class="fixed bottom-5 right-5 bg-slate-100 text-slate-800 py-2 px-4 rounded-lg shadow-lg opacity-0 transform translate-y-2">
+        <span id="message-text"></span>
+    </div>
+
+    <!-- About Model Modal -->
+    <div id="modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div id="modal-backdrop" class="fixed inset-0 bg-black/60 opacity-0"></div>
+        <div id="modal-content" class="card-bg rounded-2xl shadow-2xl w-full max-w-md p-6 relative opacity-0 transform scale-95">
+            <h2 class="text-2xl font-bold text-blue-400 mb-4">About this Model</h2>
+            <p class="text-slate-300 mb-6">This small language model was trained on the "TinyStories" dataset. It's designed to generate simple, coherent, and imaginative short stories.</p>
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between border-b border-slate-700 pb-2">
+                    <span class="font-semibold text-slate-200">Total Parameters</span>
+                    <span class="font-mono text-slate-400">29,995,392</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-700 pb-2">
+                    <span class="font-semibold text-slate-200">Model Configuration</span>
+                     <span class="font-mono text-slate-400">L=6, H=6, C=384</span>
+                </div>
+                 <div class="flex justify-between border-b border-slate-700 pb-2">
+                    <span class="font-semibold text-slate-200">Vocabulary Size</span>
+                     <span class="font-mono text-slate-400">50,257</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="font-semibold text-slate-200">Estimated Size</span>
+                    <span class="font-mono text-slate-400">~57.21 MB (bfloat16)</span>
+                </div>
+            </div>
+             <button id="modal-close-btn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const promptEl = document.getElementById('prompt');
+            const storyLengthEl = document.getElementById('story-length');
+            const generateBtn = document.getElementById('generate-btn');
+            const btnText = document.getElementById('btn-text');
+            const inputCard = document.getElementById('input-card');
+
+            const outputContainer = document.getElementById('output-container');
+            const pristineState = document.getElementById('pristine-state');
+            const resultState = document.getElementById('result-state');
+            const errorState = document.getElementById('error-state');
+
+            const storyOutput = document.getElementById('story-output');
+            const errorMessage = document.getElementById('error-message');
+            const resultActions = document.getElementById('result-actions');
+            
+            const copyBtn = document.getElementById('copy-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const examplePromptBtns = document.querySelectorAll('.example-prompt');
+            
+            const messageBox = document.getElementById('message-box');
+            const messageText = document.getElementById('message-text');
+
+            const infoBtn = document.getElementById('info-btn');
+            const modal = document.getElementById('modal');
+            const modalBackdrop = document.getElementById('modal-backdrop');
+            const modalContent = document.getElementById('modal-content');
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+
+            // IMPORTANT: Use the /stream endpoint now
+            const FLASK_API_URL = 'http://127.0.0.1:5000/stream';
+
+            // --- State Management Functions ---
+            const showState = (state) => {
+                pristineState.classList.add('hidden');
+                resultState.classList.add('hidden');
+                errorState.classList.add('hidden');
+                
+                // Special handling for result state to remove absolute positioning if it was error
+                resultState.classList.remove('absolute', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2');
+
+                state.classList.remove('hidden');
+            };
+
+            const resetUI = () => {
+                promptEl.value = '';
+                storyLengthEl.value = '2';
+                showState(pristineState);
+                inputCard.style.opacity = '1';
+                generateBtn.disabled = false;
+                btnText.textContent = 'Generate Story ✨';
+                resultActions.style.opacity = '0';
+                storyOutput.innerHTML = ''; // Clear previous story
+            };
+            
+            const showMessage = (text) => {
+                messageText.textContent = text;
+                messageBox.classList.remove('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    messageBox.classList.add('opacity-0', 'translate-y-2');
+                }, 2000);
+            };
+
+            const openModal = () => {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modalBackdrop.classList.remove('opacity-0');
+                    modalContent.classList.remove('opacity-0', 'scale-95');
+                }, 10);
+            };
+
+            const closeModal = () => {
+                modalBackdrop.classList.add('opacity-0');
+                modalContent.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            };
+            
+            // --- Event Listeners ---
+            generateBtn.addEventListener('click', handleGenerateStream);
+
+            examplePromptBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    promptEl.value = btn.dataset.prompt;
+                    promptEl.focus();
+                });
+            });
+
+            resetBtn.addEventListener('click', resetUI);
+
+            copyBtn.addEventListener('click', () => {
+                const textToCopy = storyOutput.innerText;
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(textToCopy)
+                        .then(() => showMessage('Story copied to clipboard!'))
+                        .catch(err => {
+                            console.error('Async clipboard copy failed:', err);
+                            fallbackCopy(textToCopy);
+                        });
+                } else {
+                    fallbackCopy(textToCopy);
+                }
+            });
+
+            function fallbackCopy(text) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showMessage('Story copied to clipboard!');
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                    showMessage('Could not copy text.');
+                }
+                document.body.removeChild(textArea);
+            }
+
+            infoBtn.addEventListener('click', openModal);
+            modalCloseBtn.addEventListener('click', closeModal);
+            modalBackdrop.addEventListener('click', closeModal);
+
+            // --- Main Logic (Streaming) ---
+            async function handleGenerateStream() {
+                const prompt = promptEl.value.trim();
+                if (!prompt) {
+                    showMessage("Please provide a prompt.");
+                    promptEl.focus();
+                    return;
+                }
+
+                // --- UI Setup for Streaming ---
+                showState(resultState);
+                storyOutput.innerHTML = ''; // Clear previous content
+                const cursorSpan = document.createElement('span');
+                cursorSpan.className = 'blinking-cursor';
+                storyOutput.appendChild(cursorSpan);
+
+                generateBtn.disabled = true;
+                inputCard.style.opacity = '0.7';
+                btnText.textContent = 'Generating...';
+                resultActions.style.opacity = '0';
+
+
+                const lengthMap = { '1': 50, '2': 150, '3': 300 };
+                const max_tokens = lengthMap[storyLengthEl.value];
+
+                try {
+                    const response = await fetch(FLASK_API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt: prompt,
+                            max_tokens: max_tokens,
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({ error: "Server returned an invalid response." }));
+                        throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let fullStory = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) {
+                            break;
+                        }
+                        const chunk = decoder.decode(value, { stream: true });
+                        const lines = chunk.split('\n');
+                        
+                        for (const line of lines) {
+                           if (line.startsWith('data: ')) {
+                                const data = line.substring(6);
+                                if (data === '[DONE]') {
+                                    break;
+                                }
+                                fullStory += data;
+                                // Use textContent to avoid HTML injection issues
+                                storyOutput.textContent = fullStory;
+                                storyOutput.appendChild(cursorSpan); // re-append cursor
+                                // Auto-scroll to bottom
+                                storyOutput.scrollTop = storyOutput.scrollHeight;
+                           }
+                        }
+                    }
+                    
+                    // --- Finalize UI after stream ends ---
+                    cursorSpan.remove(); // Remove cursor
+                    storyOutput.textContent = fullStory; // Set final text
+                    setTimeout(() => {
+                         resultActions.style.opacity = '1';
+                    }, 100);
+
+
+                } catch (error) {
+                    console.error('Error generating story:', error);
+                    displayError(error.message);
+                } finally {
+                    generateBtn.disabled = false;
+                    inputCard.style.opacity = '1';
+                    btnText.textContent = 'Generate Story ✨';
+                }
+            }
+            
+            function displayError(msg) {
+                errorMessage.textContent = msg;
+                showState(errorState);
+            }
+        });
+    </script>
+</body>
+</html>
+
