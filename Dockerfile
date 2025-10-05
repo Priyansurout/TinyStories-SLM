@@ -16,4 +16,4 @@ EXPOSE 7860
 
 # The command to run your Flask application
 # It uses the app_file name from your README.md
-CMD ["flask", "run", "--host=0.0.0.0", "--port=7860"]
+CMD ["gunicorn", "--workers", "1", "--bind", "0.0.0.0:7860", "inference_server:app"]
