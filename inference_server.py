@@ -9,7 +9,7 @@ To run this server:
 3. Run the script:
    python streaming_inference_server.py
 """
-from flask import Flask, request, Response
+from flask import Flask, request, Response, render_template
 from flask_cors import CORS
 import torch
 import torch.nn as nn
@@ -184,6 +184,11 @@ def load_slm_model():
         print(f"ERROR: Failed to load model state: {e}")
         MODEL = None
         return False
+
+@app.route('/')
+def index():
+    """Serves the main HTML page."""
+    return render_template('slm_futuristic_ui.html')
 
 @app.route('/stream', methods=['POST'])
 def stream_story():
