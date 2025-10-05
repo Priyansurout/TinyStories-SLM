@@ -3,3 +3,4 @@ Flask-Cors
 torch
 tiktoken
 gunicorn
+numpy
